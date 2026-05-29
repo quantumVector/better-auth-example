@@ -61,5 +61,5 @@ npx auth@latest migrate
 For VK ID, use this callback URL in the VK app settings:
 
 ```text
-https://your-project.vercel.app/api/auth/oauth2/callback/vk
+https://your-project.vercel.app/api/auth/callback/vk
 ```

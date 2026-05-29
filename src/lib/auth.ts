@@ -24,6 +24,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  socialProviders: {
+    vk: {
+      clientId: process.env.VK_CLIENT_ID!,
+      clientSecret: process.env.VK_CLIENT_SECRET!,
+    },
+  },
   plugins: [
     genericOAuth({
       config: [
@@ -56,7 +62,33 @@ export const auth = betterAuth({
               image:
                 profile.default_avatar_id && !profile.is_avatar_empty
                   ? `https://avatars.yandex.net/get-yapic/${profile.default_avatar_id}/islands-200`
-                  : undefined,
+              : undefined,
+            };
+          },
+        },
+        {
+          providerId: "mailru",
+          clientId: process.env.MAILRU_CLIENT_ID!,
+          clientSecret: process.env.MAILRU_CLIENT_SECRET!,
+          authorizationUrl: "https://o2.mail.ru/login",
+          tokenUrl: "https://o2.mail.ru/token",
+          userInfoUrl: "https://o2.mail.ru/userinfo",
+          scopes: ["userinfo"],
+          redirectURI: `${baseURL}/api/auth/oauth2/callback/mailru`,
+          authentication: "basic",
+          getUserInfo: async (tokens) => {
+            const response = await fetch(
+              `https://o2.mail.ru/userinfo?access_token=${tokens.accessToken}`
+            );
+            const profile = await response.json();
+
+            return {
+              id: String(profile.email),
+              email: profile.email ?? "",
+              emailVerified: true,
+              name:
+                profile.name ??
+                [profile.first_name, profile.last_name].filter(Boolean).join(" "),
             };
           },
         },
