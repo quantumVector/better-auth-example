@@ -1,17 +1,44 @@
 "use client";
 
-import {authClient, signIn, signOut} from "@/lib/auth-client";
+import {
+  authClient,
+  linkSocial,
+  listAccounts,
+  signIn,
+  signOut,
+  signUp,
+} from "@/lib/auth-client";
 import Image from "next/image";
+import {useEffect, useState} from "react";
+import EmailAuthForm from "./email-auth-form";
 
 type AuthTestProps = {
   routerType: "app" | "pages";
   callbackURL?: string;
 };
 
+type EmailAuthFormValues = {
+  email: string;
+  name: string;
+  password: string;
+};
+
 export default function AuthTest({ routerType, callbackURL }: AuthTestProps) {
   const { data: session, isPending } = authClient.useSession();
+  const [accounts, setAccounts] = useState<unknown>(null);
   const redirectTo =
     callbackURL ?? (routerType === "app" ? "/app-test" : "/pages-test");
+
+  useEffect(() => {
+    if (!session?.user) {
+      setAccounts(null);
+      return;
+    }
+
+    void listAccounts().then((result) => {
+      setAccounts(result.data ?? null);
+    });
+  }, [session?.user?.id]);
 
   const handleSignIn = async (provider: "yandex" | "vk" | "mailru") => {
     try {
@@ -48,6 +75,74 @@ export default function AuthTest({ routerType, callbackURL }: AuthTestProps) {
     await signOut();
   };
 
+  const handleEmailSignUp = async ({ email, name, password }: EmailAuthFormValues) => {
+    try {
+      const result = await signUp.email({
+        email,
+        password,
+        name: name || email,
+        callbackURL: redirectTo,
+      });
+
+      if (result?.error) {
+        console.error("Sign up error:", result.error);
+        alert(`Ошибка регистрации: ${result.error.message}`);
+      }
+    } catch (error) {
+      console.error("Sign up error:", error);
+      alert(`Ошибка: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`);
+    }
+  };
+
+  const handleEmailSignIn = async ({ email, password }: EmailAuthFormValues) => {
+    try {
+      const result = await signIn.email({
+        email,
+        password,
+        callbackURL: redirectTo,
+      });
+
+      if (result?.error) {
+        console.error("Sign in error:", result.error);
+        alert(`Ошибка входа: ${result.error.message}`);
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      alert(`Ошибка: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`);
+    }
+  };
+
+  const handleLinkProvider = async (provider: "yandex" | "vk" | "mailru") => {
+    try {
+      if (provider === "vk") {
+        const result = await linkSocial({
+          provider: "vk",
+          callbackURL: redirectTo,
+        });
+
+        if (result?.error) {
+          console.error("Link error:", result.error);
+          alert(`Ошибка привязки: ${result.error.message}`);
+        }
+
+        return;
+      }
+
+      const result = await authClient.oauth2.link({
+        providerId: provider,
+        callbackURL: redirectTo,
+      });
+
+      if (result?.error) {
+        console.error("Link error:", result.error);
+        alert(`Ошибка привязки: ${result.error.message}`);
+      }
+    } catch (error) {
+      console.error("Link error:", error);
+      alert(`Ошибка: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`);
+    }
+  };
+
   if (isPending) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -58,7 +153,7 @@ export default function AuthTest({ routerType, callbackURL }: AuthTestProps) {
 
   return (
     <main className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold text-gray-950">
           Better Auth
         </h1>
@@ -100,31 +195,74 @@ export default function AuthTest({ routerType, callbackURL }: AuthTestProps) {
             >
               Выйти
             </button>
+
+            <div className="space-y-3 border-t border-gray-100 pt-5">
+              <div className="text-sm font-medium text-gray-900">
+                Привязать провайдера
+              </div>
+              <button
+                onClick={() => handleLinkProvider("vk")}
+                className="w-full rounded-md bg-[#0077FF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#006BE6]"
+              >
+                Link VK ID
+              </button>
+              <button
+                onClick={() => handleLinkProvider("yandex")}
+                className="w-full rounded-md bg-[#FC3F1D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#E5391A]"
+              >
+                Link Яндекс ID
+              </button>
+              <button
+                onClick={() => handleLinkProvider("mailru")}
+                className="w-full rounded-md bg-[#005FF9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0054DD]"
+              >
+                Link Mail.ru
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="mt-8 space-y-3">
-            <button
-              onClick={() => handleSignIn("vk")}
-              className="w-full rounded-md bg-[#0077FF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#006BE6]"
-            >
-              Войти через VK ID
-            </button>
+          <div className="mt-8 space-y-6">
+            <EmailAuthForm
+              onSignIn={handleEmailSignIn}
+              onSignUp={handleEmailSignUp}
+            />
 
-            <button
-              onClick={() => handleSignIn("yandex")}
-              className="w-full rounded-md bg-[#FC3F1D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#E5391A]"
-            >
-              Войти через Яндекс ID
-            </button>
+            <div className="space-y-3 rounded-md border border-gray-200 p-4">
+              <div className="text-sm font-medium text-gray-950">
+                OAuth
+              </div>
+              <button
+                onClick={() => handleSignIn("vk")}
+                className="w-full rounded-md bg-[#0077FF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#006BE6]"
+              >
+                Войти через VK ID
+              </button>
 
-            <button
-              onClick={() => handleSignIn("mailru")}
-              className="w-full rounded-md bg-[#005FF9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0054DD]"
-            >
-              Войти через Mail.ru
-            </button>
+              <button
+                onClick={() => handleSignIn("yandex")}
+                className="w-full rounded-md bg-[#FC3F1D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#E5391A]"
+              >
+                Войти через Яндекс ID
+              </button>
+
+              <button
+                onClick={() => handleSignIn("mailru")}
+                className="w-full rounded-md bg-[#005FF9] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#0054DD]"
+              >
+                Войти через Mail.ru
+              </button>
+            </div>
           </div>
         )}
+
+        <div className="mt-8">
+          <div className="mb-2 text-xs uppercase tracking-wide text-gray-400">
+            Accounts JSON
+          </div>
+          <pre className="max-h-48 overflow-auto rounded-md bg-gray-950 p-4 text-xs leading-relaxed text-gray-100">
+            {JSON.stringify(accounts ?? null, null, 2)}
+          </pre>
+        </div>
 
         <div className="mt-8">
           <div className="mb-2 text-xs uppercase tracking-wide text-gray-400">

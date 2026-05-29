@@ -10,6 +10,9 @@ export const authClient = createAuthClient({
 
 export const {
   signIn,
+  signUp,
   signOut,
-  getSession
+  getSession,
+  linkSocial,
+  listAccounts,
 } = authClient;
