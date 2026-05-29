@@ -34,3 +34,32 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Better Auth Database
+
+The project uses PostgreSQL for Better Auth so it can run on Vercel. SQLite is not suitable for Vercel Functions because the deployment filesystem is not persistent.
+
+Recommended setup:
+
+1. Create a Postgres database, for example Neon through the Vercel Marketplace.
+2. Add these environment variables locally and in Vercel:
+
+```bash
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=https://your-project.vercel.app
+NEXT_PUBLIC_BETTER_AUTH_URL=https://your-project.vercel.app
+DATABASE_URL=postgres://user:password@host:5432/database?sslmode=require
+```
+
+3. Install dependencies after updating `package.json`.
+4. Apply the Better Auth schema:
+
+```bash
+npx auth@latest migrate
+```
+
+For VK ID, use this callback URL in the VK app settings:
+
+```text
+https://your-project.vercel.app/api/auth/oauth2/callback/vk
+```

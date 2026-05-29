@@ -1,9 +1,23 @@
 import { betterAuth } from "better-auth";
-import Database from "better-sqlite3";
 import { genericOAuth } from "better-auth/plugins";
+import { Pool } from "pg";
+
+const baseURL =
+  process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_BETTER_AUTH_URL;
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required for Better Auth database access");
+}
+
+if (!baseURL) {
+  throw new Error("BETTER_AUTH_URL is required for Better Auth callbacks");
+}
 
 export const auth = betterAuth({
-  database: new Database("./sqlite.db"),
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL,
+  }),
+  baseURL,
   logger: {
     level: "debug",
   },
@@ -20,7 +34,7 @@ export const auth = betterAuth({
           authorizationUrl: "https://oauth.yandex.ru/authorize",
           tokenUrl: "https://oauth.yandex.ru/token",
           scopes: ["login:email", "login:info", "login:avatar"],
-          redirectURI: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/oauth2/callback/yandex`,
+          redirectURI: `${baseURL}/api/auth/oauth2/callback/yandex`,
           pkce: true,
           getUserInfo: async (tokens) => {
             const response = await fetch(
