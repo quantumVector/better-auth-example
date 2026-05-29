@@ -5,7 +5,7 @@ const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
 export const metadata: Metadata = {
   title: "Better Auth Research",
-  description: "Testing Better Auth with Russian OAuth providers",
+  description: "Testing Better Auth with OAuth providers",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
