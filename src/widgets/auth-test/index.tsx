@@ -65,6 +65,9 @@ export default function AuthTest({ routerType, callbackURL }: AuthTestProps) {
         <p className="mt-2 text-sm text-gray-500">
           Проверка входа через OAuth-провайдеры.
         </p>
+        <div className="mt-4 inline-flex rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600">
+          {routerType === "app" ? "App Router" : "Pages Router"}
+        </div>
 
         {session?.user ? (
           <div className="mt-8 space-y-5">
